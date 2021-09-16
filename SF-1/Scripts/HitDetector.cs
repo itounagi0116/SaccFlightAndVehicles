@@ -50,12 +50,26 @@ public class HitDetector : UdonSharpBehaviour
     }
     public void Respawn()//called by the explode animation on last frame
     {
-        EngineControl.SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "Respawn_event");//owner broadcasts because it's more reliable than everyone doing it individually
+        if (EngineControl.IsOwner)
+        {
+            EngineControl.SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "Respawn_event");//owner broadcasts because it's more reliable than everyone doing it individually
+        }
     }
     public void MoveToSpawn()//called 3 seconds before respawn by animation, to prevent a glitch where the plane will appear where it died for a second for non-owners
     {
         if (EngineControl.IsOwner)
-        { VehicleObjectSync.Respawn(); }//this works if done just locally; 
+        {
+            if (InEditor || EngineControl.UsingManualSync)
+            {
+                EngineControl.VehicleTransform.SetPositionAndRotation(EngineControl.Spawnposition, EngineControl.Spawnrotation);
+                EngineControl.VehicleRigidbody.velocity = Vector3.zero;
+                EngineControl.VehicleRigidbody.angularVelocity = Vector3.zero;
+            }
+            else
+            {
+                VehicleObjectSync.Respawn();
+            }
+        }//this works if done just locally;
     }
     public void NotDead()//called by 'respawn' animation twice because calling on the last frame of animation is unreliable for some reason
     {

@@ -1,0 +1,8 @@
+SaccSync backport Instructions:
+replace the script files
+Place an udonbehaviour with saccsync on it as child of vehicle
+set the saccsync object to manual sync
+set references for saccsync(Vehicle Transform = the main object that has the rigidbody)
+disable the saccsync gameobject
+set enginecontroller's reference for saccsync
+remove the vrc_objectsync from the main object

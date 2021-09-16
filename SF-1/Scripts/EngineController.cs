@@ -7,6 +7,7 @@ using VRC.Udon;
 public class EngineController : UdonSharpBehaviour
 {
     public GameObject VehicleMainObj;
+    [SerializeField] private SaccSyncScript SaccSync;
     public EffectsController EffectsControl;
     public SoundController SoundControl;
     public HUDController HUDControl;
@@ -48,7 +49,7 @@ public class EngineController : UdonSharpBehaviour
     public bool RepeatingWorld = true;
     public float RepeatingWorldDistance = 20000;
     public bool HasAfterburner = true;
-    public float ThrottleAfterBurnerPoint = 0.8f;
+    public float ThrottleAfterburnerPoint = 0.8f;
     public bool VTOLOnly = false;
     public bool NoCanopy = false;
     [Header("Dial Functions Usable?")]
@@ -323,10 +324,11 @@ public class EngineController : UdonSharpBehaviour
     private bool WeaponSelected = false;
     private int CatapultDeadTimer = 0;//needed to be invincible for a frame when entering catapult
     [System.NonSerializedAttribute] public Vector3 Spawnposition;
-    [System.NonSerializedAttribute] public Vector3 Spawnrotation;
+    [System.NonSerializedAttribute] public Quaternion Spawnrotation;
     private int OutsidePlaneLayer;
     private float AAMTargetObscuredDelay;
     [System.NonSerializedAttribute] public bool DoAAMTargeting;
+    [System.NonSerializedAttribute] public bool UsingManualSync;
     private float TargetingAngle;
     private float FullAAMsDivider;
     private float FullAGMsDivider;
@@ -349,12 +351,13 @@ public class EngineController : UdonSharpBehaviour
     private float VTOLAngleInput;
     private float VTOL90Degrees;
     private float throttleABPointDivider;
-    private float VTOLMaxAngleDivider;
+    private float VTOLAngleDivider;
     private float InverseThrottleABPointDivider;
     private float EngineOutputLastFrame;
     float VTOLAngle90;
     bool PlaneMoving = false;
     bool HasWheelColliders = false;
+    private float vtolangledif;
     private bool GunRecoilEmptyNULL = true;
     private int HOOKED_STRING = Animator.StringToHash("hooked");
     private int FLARES_STRING = Animator.StringToHash("flares");
@@ -456,20 +459,34 @@ public class EngineController : UdonSharpBehaviour
         VehicleRigidbody = VehicleMainObj.GetComponent<Rigidbody>();
         VehicleConstantForce = VehicleMainObj.GetComponent<ConstantForce>();
         localPlayer = Networking.LocalPlayer;
-        if (localPlayer == null) { InEditor = true; Piloting = true; }
+        if (localPlayer == null)
+        {
+            InEditor = true;
+            Piloting = true;
+        }
         else
         {
             InEditor = false;
             if (localPlayer.IsUserInVR()) { InVR = true; }
+            if (localPlayer.isMaster)
+            {
+                VehicleRigidbody.WakeUp();
+                VehicleRigidbody.constraints = RigidbodyConstraints.None;
+                IsOwner = true;
+            }
+            else
+            {
+                VehicleRigidbody.Sleep();
+                VehicleRigidbody.constraints = RigidbodyConstraints.FreezePosition;
+            }
         }
 
         if (!HasLimits) { FlightLimitsEnabled = false; }
 
         FindAAMTargets();
 
-        //these two are only used in editor
         Spawnposition = VehicleTransform.position;
-        Spawnrotation = VehicleTransform.rotation.eulerAngles;
+        Spawnrotation = VehicleTransform.rotation;
 
         VehicleRigidbody.centerOfMass = VehicleTransform.InverseTransformDirection(CenterOfMass.position - VehicleTransform.position);//correct position if scaled
         VehicleRigidbody.inertiaTensorRotation = Quaternion.SlerpUnclamped(Quaternion.identity, VehicleRigidbody.inertiaTensorRotation, InertiaTensorRotationMulti);
@@ -507,9 +524,10 @@ public class EngineController : UdonSharpBehaviour
         if (VTOLOnly || HasVTOLAngle) { VTOLenabled = true; }
         VTOL90Degrees = Mathf.Min(90 / VTOLMaxAngle, 1);
 
-        throttleABPointDivider = 1 / ThrottleAfterBurnerPoint;
-        VTOLMaxAngleDivider = 1 / VTOLMaxAngle;
-        InverseThrottleABPointDivider = 1 / (1 - ThrottleAfterBurnerPoint);
+        throttleABPointDivider = 1 / ThrottleAfterburnerPoint;
+        vtolangledif = VTOLMaxAngle - VTOLMinAngle;
+        VTOLAngleDivider = VTOLAngleTurnRate / vtolangledif;
+        InverseThrottleABPointDivider = 1 / (1 - ThrottleAfterburnerPoint);
 
         VTOLAngle = VTOLAngleInput = VTOLDefaultValue;
 
@@ -519,12 +537,18 @@ public class EngineController : UdonSharpBehaviour
         if (wc.Length != 0) HasWheelColliders = true;
         if (GroundEffectEmpty == null)
         {
-            Debug.LogWarning("GroundEffectEmpty not found, using PitchMoment instead");
-            GroundEffectEmpty = PitchMoment;
+            Debug.LogWarning("GroundEffectEmpty not found, using CenterOfMass instead");
+            GroundEffectEmpty = CenterOfMass;
         }
 
-        VehicleObjectSync = (VRC.SDK3.Components.VRCObjectSync)VehicleMainObj.GetComponent(typeof(VRC.SDK3.Components.VRCObjectSync));
-
+        VehicleObjectSync = (VRC.SDK3.Components.VRCObjectSync)VehicleMainObj.gameObject.GetComponent(typeof(VRC.SDK3.Components.VRCObjectSync));
+        if (VehicleObjectSync == null)
+        {
+            UsingManualSync = true;
+            if (SaccSync == null) SaccSync = VehicleMainObj.GetComponentInChildren<SaccSyncScript>(true);
+            if (!InEditor)
+            { SaccSync.gameObject.SetActive(true); }
+        }
         if (GunRecoilEmpty != null)
         {
             GunRecoilEmptyNULL = false;
@@ -647,7 +671,7 @@ public class EngineController : UdonSharpBehaviour
                     }
                 }
 
-                ///////////////////KEYBOARD CONTROLS////////////////////////////////////////////////////////          
+                ///////////////////KEYBOARD CONTROLS////////////////////////////////////////////////////////
                 if (EffectsControl.Smoking)
                 {
                     int keypad7 = Input.GetKey(KeyCode.Keypad7) ? 1 : 0;
@@ -779,7 +803,7 @@ public class EngineController : UdonSharpBehaviour
                     {
                         float pgup = Input.GetKey(KeyCode.PageUp) ? 1 : 0;
                         float pgdn = Input.GetKey(KeyCode.PageDown) ? 1 : 0;
-                        VTOLAngleInput = Mathf.Clamp(VTOLAngleInput + ((pgdn - pgup) * DeltaTime * VTOLAngleTurnRate) / VTOLMaxAngle, 0, 1);
+                        VTOLAngleInput = Mathf.Clamp(VTOLAngleInput + ((pgdn - pgup) * (VTOLAngleDivider * Time.smoothDeltaTime)), 0, 1);
                     }
                     if (!(VTOLAngle == VTOLAngleInput && VTOLAngleInput == 0) || VTOLOnly)//only SetVTOLValues if it'll do anything
                     { SetVTOLValues(); }
@@ -920,7 +944,7 @@ public class EngineController : UdonSharpBehaviour
                     case 0://player just got in and hasn't selected anything
                         BrakeInput = 0;
                         break;
-                    case 1://VTOL
+                    case 1://VTOL ANGLE
                         if (LTrigger > 0.75)
                         {
                             Vector3 handpos = VehicleTransform.position - localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).position;
@@ -1143,7 +1167,6 @@ public class EngineController : UdonSharpBehaviour
                             }
                             else
                             {
-                                Debug.Log("RECOILINGINGING");
                                 VehicleRigidbody.AddForceAtPosition(-GunRecoilEmpty.forward * GunRecoil * .01f/* so the strength is in the same range as above*/, GunRecoilEmpty.position, ForceMode.Force);
                             }
                             RTriggerLastFrame = true;
@@ -1484,11 +1507,11 @@ public class EngineController : UdonSharpBehaviour
                 else if (AfterburnerOn)
                 {
                     PlayerThrottle = Mathf.Clamp(PlayerThrottle + ((Shiftf - LeftControlf) * .5f * DeltaTime), 0, 1);
-                    Afterburner = (ThrottleInput - ThrottleAfterBurnerPoint) * InverseThrottleABPointDivider * AfterburnerThrustMulti;//scale afterburner strength with amount above ThrottleAfterBurnerPoint
+                    Afterburner = (ThrottleInput - ThrottleAfterburnerPoint) * InverseThrottleABPointDivider * AfterburnerThrustMulti;//scale afterburner strength with amount above ThrottleAfterBurnerPoint
                 }
                 else
                 {
-                    PlayerThrottle = Mathf.Clamp(PlayerThrottle + ((Shiftf - LeftControlf) * .5f * DeltaTime), 0, ThrottleAfterBurnerPoint);
+                    PlayerThrottle = Mathf.Clamp(PlayerThrottle + ((Shiftf - LeftControlf) * .5f * DeltaTime), 0, ThrottleAfterburnerPoint);
                 }
                 //VR Throttle
                 if (LGrip > 0.75)
@@ -1516,13 +1539,13 @@ public class EngineController : UdonSharpBehaviour
                     bool VTOLandAB_Disallowed = (!VTOLAllowAfterburner && VTOLAngle != 0);/*don't allow VTOL AB disabled planes, false if attemping to*/
 
                     //Detent function to prevent you going into afterburner by accident (bit of extra force required to turn on AB (actually hand speed))
-                    if (((HandDistanceZLastFrame - HandThrottleAxis) * ThrottleSensitivity > .05f)/*detent overcome*/ && !VTOLandAB_Disallowed || ((PlayerThrottle > ThrottleAfterBurnerPoint/*already in afterburner*/&& !VTOLandAB_Disallowed) || !HasAfterburner))
+                    if (((HandDistanceZLastFrame - HandThrottleAxis) * ThrottleSensitivity > .05f)/*detent overcome*/ && !VTOLandAB_Disallowed || ((PlayerThrottle > ThrottleAfterburnerPoint/*already in afterburner*/&& !VTOLandAB_Disallowed) || !HasAfterburner))
                     {
                         PlayerThrottle = Mathf.Clamp(TempThrottle + ThrottleDifference, 0, 1);
                     }
                     else
                     {
-                        PlayerThrottle = Mathf.Clamp(TempThrottle + ThrottleDifference, 0, ThrottleAfterBurnerPoint);
+                        PlayerThrottle = Mathf.Clamp(TempThrottle + ThrottleDifference, 0, ThrottleAfterburnerPoint);
                     }
                     HandDistanceZLastFrame = HandThrottleAxis;
                     LGripLastFrame = true;
@@ -1565,7 +1588,7 @@ public class EngineController : UdonSharpBehaviour
                             SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "ResupplyPlane");
                         }
                     }
-                    //check for catapult below us and attach if there is one    
+                    //check for catapult below us and attach if there is one
                     if (HasCatapult && CatapultStatus == 0)
                     {
                         RaycastHit hit;
@@ -1619,7 +1642,7 @@ public class EngineController : UdonSharpBehaviour
                 if (Input.GetKeyDown(KeyCode.T) && HasAfterburner && (VTOLAngle == 0 || VTOLAllowAfterburner))
                 {
                     if (AfterburnerOn)
-                        PlayerThrottle = ThrottleAfterBurnerPoint;
+                        PlayerThrottle = ThrottleAfterburnerPoint;
                     else
                         PlayerThrottle = 1;
                 }
@@ -1663,11 +1686,11 @@ public class EngineController : UdonSharpBehaviour
 
                 if (HasAfterburner)
                 {
-                    if (ThrottleInput > ThrottleAfterBurnerPoint && !AfterburnerOn)
+                    if (ThrottleInput > ThrottleAfterburnerPoint && !AfterburnerOn)
                     {
                         SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "SetAfterburnerOn");
                     }
-                    else if (ThrottleInput <= ThrottleAfterBurnerPoint && AfterburnerOn)
+                    else if (ThrottleInput <= ThrottleAfterburnerPoint && AfterburnerOn)
                     {
                         SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "SetAfterburnerOff");
                     }
@@ -1941,7 +1964,6 @@ public class EngineController : UdonSharpBehaviour
                             float thrust = (HasAfterburner ? Mathf.Min(EngineOutput * (throttleABPointDivider), 1) : EngineOutput) * ThrottleStrength * Afterburner * Atmosphere;
 
                             Vector3 VTOL180 = new Vector3(0, 0.01f, -1);//used as a rotation target for VTOL adjustment. Slightly below directly backward so that rotatetowards rotates on the correct axis
-                            float vtolangledif = VTOLMaxAngle - VTOLMinAngle;
                             float VTOLAngle2 = VTOLMinAngle + vtolangledif * VTOLAngle;//vtol angle in degrees
                                                                                        //rotate and scale Vector for VTOL thrust
                             if (VTOLOnly)//just use regular thrust strength if vtol only, as there should be no transition to plane flight
@@ -2094,7 +2116,20 @@ public class EngineController : UdonSharpBehaviour
             LastFrameVel = VehicleVel;
         }
     }
-
+    public override void OnOwnershipTransferred(VRCPlayerApi player)
+    {
+        if (player.isLocal)
+        {
+            VehicleRigidbody.velocity = CurrentVel;
+            VehicleRigidbody.WakeUp();
+            VehicleRigidbody.constraints = RigidbodyConstraints.None;
+        }
+        else
+        {
+            VehicleRigidbody.Sleep();
+            VehicleRigidbody.constraints = RigidbodyConstraints.FreezePosition;
+        }
+    }
     //In soundcontroller, CanopyCloseTimer < -100000 means play inside canopy sounds and between -100000 and 0 means play outside sounds.
     //The value is set above these numbers by the length of the animation, and delta time is removed from it each frame.
     private void ToggleCanopy()
@@ -2696,6 +2731,7 @@ public class EngineController : UdonSharpBehaviour
         Networking.SetOwner(localPlayer, VehicleMainObj);
         Networking.SetOwner(localPlayer, gameObject);
         Networking.SetOwner(localPlayer, EffectsControl.gameObject);
+        Networking.SetOwner(localPlayer, SaccSync.gameObject);
         //VehicleTransform.position = new Vector3(VehicleTransform.position.x, -10000, VehicleTransform.position.z);
         Atmosphere = 1;//planemoving optimization requires this to be here
         //synced variables
@@ -2704,7 +2740,16 @@ public class EngineController : UdonSharpBehaviour
         GunAmmoInSeconds = FullGunAmmo;
         VTOLAngle = VTOLDefaultValue;
         VTOLAngleInput = VTOLDefaultValue;
-        VehicleObjectSync.Respawn();//this works if done just locally
+        if (InEditor || UsingManualSync)
+        {
+            VehicleTransform.SetPositionAndRotation(Spawnposition, Spawnrotation);
+            VehicleRigidbody.velocity = Vector3.zero;
+            VehicleRigidbody.angularVelocity = Vector3.zero;
+        }
+        else
+        {
+            VehicleObjectSync.Respawn();
+        }
     }
     public void ResetStatus()//called globally when using respawn button
     {
@@ -2756,7 +2801,7 @@ public class EngineController : UdonSharpBehaviour
         MissilesIncoming = 0;
         if (InEditor)
         {
-            VehicleTransform.SetPositionAndRotation(Spawnposition, Quaternion.Euler(Spawnrotation));
+            VehicleTransform.SetPositionAndRotation(Spawnposition, Spawnrotation);
             Health = FullHealth;
             EffectsControl.GearUp = false;
             EffectsControl.Flaps = true;
@@ -2765,7 +2810,10 @@ public class EngineController : UdonSharpBehaviour
         {
             Health = FullHealth;
             //this should respawn it in VRC, doesn't work in editor
-            VehicleTransform.position = new Vector3(VehicleTransform.position.x, -10000, VehicleTransform.position.z);
+            if (!UsingManualSync)
+            {
+                VehicleTransform.position = new Vector3(VehicleTransform.position.x, -10000, VehicleTransform.position.z);
+            }
             EffectsControl.GearUp = false;
             EffectsControl.Flaps = true;
         }
@@ -2861,6 +2909,10 @@ public class EngineController : UdonSharpBehaviour
         {
             Networking.SetOwner(localPlayer, HUDControl.gameObject);
             HUDControl.gameObject.SetActive(true);
+        }
+        if (UsingManualSync && SaccSync != null)
+        {
+            Networking.SetOwner(localPlayer, SaccSync.gameObject);
         }
 
         //hopefully prevents explosions when you enter the plane
@@ -3032,7 +3084,7 @@ public class EngineController : UdonSharpBehaviour
         if (NumAAMTargets > 0)
         {
             n = 0;
-            //create a unique number based on position in the hierarchy in order to sort the AAMTargets array later, to make sure they're the in the same order on all clients 
+            //create a unique number based on position in the hierarchy in order to sort the AAMTargets array later, to make sure they're the in the same order on all clients
             float[] order = new float[NumAAMTargets];
             for (int i = 0; AAMTargets[n] != null; i++)
             {
@@ -3111,7 +3163,7 @@ public class EngineController : UdonSharpBehaviour
     }
     private void SetVTOLValues()
     {
-        VTOLAngle = Mathf.MoveTowards(VTOLAngle, VTOLAngleInput, VTOLMaxAngleDivider * VTOLAngleTurnRate * Time.smoothDeltaTime);
+        VTOLAngle = Mathf.MoveTowards(VTOLAngle, VTOLAngleInput, VTOLAngleDivider * Time.smoothDeltaTime);
         float SpeedForVTOL = (Mathf.Min(Speed / VTOLLoseControlSpeed, 1));
         if (VTOLAngle > 0 && SpeedForVTOL != 1 || VTOLOnly)
         {
@@ -3140,7 +3192,7 @@ public class EngineController : UdonSharpBehaviour
             if (!VTOLAllowAfterburner)
             {
                 if (Afterburner != 1)
-                { PlayerThrottle = ThrottleAfterBurnerPoint; }
+                { PlayerThrottle = ThrottleAfterburnerPoint; }
             }
             if (Cruise)
             { Cruise = false; }
