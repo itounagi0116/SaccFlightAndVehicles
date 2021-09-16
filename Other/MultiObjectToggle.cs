@@ -1,9 +1,10 @@
-﻿
+
 using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
 
+[UdonBehaviourSyncMode(BehaviourSyncMode.None)]
 public class MultiObjectToggle : UdonSharpBehaviour
 {
     private int current = 0;

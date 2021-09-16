@@ -1,10 +1,11 @@
-﻿
+
 using UdonSharp;
 using UnityEngine;
 using UnityEngine.UI;
 using VRC.SDKBase;
 using VRC.Udon;
 
+[UdonBehaviourSyncMode(BehaviourSyncMode.Continuous)]
 public class Scoreboard_Kills : UdonSharpBehaviour
 {
     [System.NonSerializedAttribute] [UdonSynced(UdonSyncMode.None)] public string TopKiller = "Nobody";

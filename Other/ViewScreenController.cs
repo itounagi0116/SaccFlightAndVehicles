@@ -1,10 +1,11 @@
-﻿
+
 using UdonSharp;
 using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
 using UnityEngine.UI;
 
+[UdonBehaviourSyncMode(BehaviourSyncMode.Continuous)]
 public class ViewScreenController : UdonSharpBehaviour
 {
     public LayerMask AAMTargetsLayer;

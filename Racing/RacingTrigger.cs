@@ -1,10 +1,11 @@
-﻿
+
 using UdonSharp;
 using UnityEngine;
 using UnityEngine.UI;
 using VRC.SDKBase;
 using VRC.Udon;
 
+[UdonBehaviourSyncMode(BehaviourSyncMode.None)]
 public class RacingTrigger : UdonSharpBehaviour
 {
     public string PlaneName;

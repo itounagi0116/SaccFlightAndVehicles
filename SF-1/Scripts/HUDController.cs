@@ -5,6 +5,7 @@ using VRC.SDKBase;
 using VRC.Udon;
 using UnityEngine.UI;
 
+[UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
 public class HUDController : UdonSharpBehaviour
 {
     public EngineController EngineControl;

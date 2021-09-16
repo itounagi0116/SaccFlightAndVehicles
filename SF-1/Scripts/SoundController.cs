@@ -4,6 +4,7 @@ using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
 
+[UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
 public class SoundController : UdonSharpBehaviour
 {
     public EngineController EngineControl;

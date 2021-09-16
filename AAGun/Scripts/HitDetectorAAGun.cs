@@ -4,6 +4,7 @@ using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
 
+[UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
 public class HitDetectorAAGun : UdonSharpBehaviour
 {
     public AAGunController AAGunControl;
