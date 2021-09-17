@@ -4,7 +4,7 @@ using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
 
-[UdonBehaviourSyncMode(BehaviourSyncMode.None)]
+[UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
 public class VehicleRespawnButton : UdonSharpBehaviour
 {
     public EngineController EngineControl;
