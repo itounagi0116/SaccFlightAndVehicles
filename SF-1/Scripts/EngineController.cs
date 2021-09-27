@@ -546,7 +546,6 @@ public class EngineController : UdonSharpBehaviour
         if (VehicleObjectSync == null)
         {
             UsingManualSync = true;
-            if (SaccSync == null) SaccSync = VehicleMainObj.GetComponentInChildren<SaccSyncScript>(true);
             if (!InEditor)
             { SaccSync.gameObject.SetActive(true); }
         }

@@ -4,7 +4,7 @@ using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
 
-[UdonBehaviourSyncMode(BehaviourSyncMode.Continuous)] // [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
+[UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
 public class PassengerSeat : UdonSharpBehaviour
 {
     public EngineController EngineControl;
@@ -13,6 +13,8 @@ public class PassengerSeat : UdonSharpBehaviour
     private LeaveVehicleButton LeaveButtonControl;
     private Transform PlaneMesh;
     private LayerMask Planelayer;
+    private Transform Seat;
+    private Quaternion SeatStartRot;
     private void Start()
     {
         Assert(EngineControl != null, "Start: EngineControl != null");
@@ -23,13 +25,17 @@ public class PassengerSeat : UdonSharpBehaviour
 
         PlaneMesh = EngineControl.PlaneMesh.transform;
         Planelayer = PlaneMesh.gameObject.layer;
+        Seat = ((VRC.SDK3.Components.VRCStation)GetComponent(typeof(VRC.SDK3.Components.VRCStation))).stationEnterPlayerLocation.transform;
+        SeatStartRot = Seat.localRotation;
     }
     private void Interact()
     {
         EngineControl.PassengerEnterPlaneLocal();
         if (LeaveButton != null) { LeaveButton.SetActive(true); }
         if (SeatAdjuster != null) { SeatAdjuster.SetActive(true); }
+        Seat.rotation = Quaternion.Euler(0, Seat.eulerAngles.y, 0);//fixes offset seated position when getting in a rolled/pitched vehicle
         EngineControl.localPlayer.UseAttachedStation();
+        Seat.localRotation = SeatStartRot;
     }
     public override void OnStationEntered(VRCPlayerApi player)
     {

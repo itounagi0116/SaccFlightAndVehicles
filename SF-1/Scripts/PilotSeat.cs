@@ -4,7 +4,7 @@ using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
 
-[UdonBehaviourSyncMode(BehaviourSyncMode.Continuous)] // [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
+[UdonBehaviourSyncMode(BehaviourSyncMode.NoVariableSync)]
 public class PilotSeat : UdonSharpBehaviour
 {
     public EngineController EngineControl;
@@ -12,6 +12,8 @@ public class PilotSeat : UdonSharpBehaviour
     public GameObject Gun_pilot;
     public GameObject SeatAdjuster;
     private LeaveVehicleButton LeaveButtonControl;
+    private Transform Seat;
+    private Quaternion SeatStartRot;
     private void Start()
     {
         Assert(EngineControl != null, "Start: EngineControl != null");
@@ -20,11 +22,15 @@ public class PilotSeat : UdonSharpBehaviour
         Assert(SeatAdjuster != null, "Start: SeatAdjuster != null");
 
         LeaveButtonControl = LeaveButton.GetComponent<LeaveVehicleButton>();
+        Seat = ((VRC.SDK3.Components.VRCStation)GetComponent(typeof(VRC.SDK3.Components.VRCStation))).stationEnterPlayerLocation.transform;
+        SeatStartRot = Seat.localRotation;
     }
     private void Interact()//entering the plane
     {
         EngineControl.PilotEnterPlaneLocal();
+        Seat.rotation = Quaternion.Euler(0, Seat.eulerAngles.y, 0);//fixes offset seated position when getting in a rolled/pitched vehicle
         EngineControl.localPlayer.UseAttachedStation();
+        Seat.localRotation = SeatStartRot;
         if (LeaveButton != null) { LeaveButton.SetActive(true); }
         if (Gun_pilot != null) { Gun_pilot.SetActive(true); }
         if (SeatAdjuster != null) { SeatAdjuster.SetActive(true); }
