@@ -241,9 +241,10 @@ public class SoundController : UdonSharpBehaviour
         if (dopplecounter > 4)
         {
             float SmoothDeltaTime = Time.smoothDeltaTime;
-            if (EngineControl.localPlayer == null) return;
+            var localPlayer = Networking.LocalPlayer;
+            if (localPlayer == null) return;
 
-            ThisFrameDist = Vector3.Distance(EngineControl.localPlayer.GetPosition(), CenterOfMass.position);
+            ThisFrameDist = Vector3.Distance(localPlayer.GetPosition(), CenterOfMass.position);
             if (ThisFrameDist > MaxAudibleDistance)
             {
                 LastFrameDist = ThisFrameDist; TooFarToHear = true;

@@ -22,7 +22,7 @@ public class SaccFlight : UdonSharpBehaviour
     }
     private void FixedUpdate()
     {
-        if (localPlayer == null) return;
+        if (!Utilities.IsValid(localPlayer)) return;
         if (!localPlayer.IsPlayerGrounded())//only does anything if in the air.
         {
             float ForwardThrust = Mathf.Max(Input.GetAxisRaw("Oculus_CrossPlatform_SecondaryIndexTrigger"), Input.GetKey(KeyCode.F) ? 1 : 0);
