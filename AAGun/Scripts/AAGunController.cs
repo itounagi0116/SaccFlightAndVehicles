@@ -177,7 +177,6 @@ public class AAGunController : UdonSharpBehaviour
     {
         float DeltaTime = Time.deltaTime;
         IsOwner = localPlayer.IsOwner(VehicleMainObj);
-
         if (IsOwner)
         {
             if (Health <= 0)
