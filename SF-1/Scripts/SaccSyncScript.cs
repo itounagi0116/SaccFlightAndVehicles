@@ -58,11 +58,8 @@ public class SaccSyncScript : UdonSharpBehaviour
     private void Start()
     {
         localPlayer = Networking.LocalPlayer;
-        bool InEditor = localPlayer == null;
-        if (!InEditor && localPlayer.isMaster)
-        { IsOwner = true; }
-        else if (!InEditor) { IsOwner = false; }
-        else { IsOwner = true; }//play mode in editor
+        if (localPlayer.isMaster) { IsOwner = true; }
+        else { IsOwner = false; }
         nextUpdateTime = Time.time + Random.Range(0f, updateInterval);
         SmoothingTimeDivider = 1f / updateInterval;
         StartupTimeMS = Networking.GetServerTimeInMilliseconds();

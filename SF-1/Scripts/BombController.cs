@@ -70,18 +70,11 @@ public class BombController : UdonSharpBehaviour
         }
         BombCollider.enabled = false;
         Animator Bombani = GetComponent<Animator>();
-        if (EngineControl.InEditor)
+        if (EngineControl.localPlayer.IsOwner(EngineControl.gameObject))
         {
             Bombani.SetTrigger("explodeowner");
         }
-        else
-        {
-            if (EngineControl.localPlayer.IsOwner(EngineControl.gameObject))
-            {
-                Bombani.SetTrigger("explodeowner");
-            }
-            else Bombani.SetTrigger("explode");
-        }
+        else Bombani.SetTrigger("explode");
         Lifetime = MaxLifetime - 10;
     }
 }

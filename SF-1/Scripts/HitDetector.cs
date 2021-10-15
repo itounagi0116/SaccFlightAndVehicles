@@ -10,14 +10,12 @@ public class HitDetector : UdonSharpBehaviour
     public EngineController EngineControl;
     [System.NonSerializedAttribute] public float LastHitTime = -100;
     [System.NonSerializedAttribute] public EngineController LastAttacker;
-    private bool InEditor = true;
     VRC.SDK3.Components.VRCObjectSync VehicleObjectSync;
 
     private void Start()
     {
         Assert(EngineControl != null, "Start: EngineControl != null");
         if (Networking.LocalPlayer != null)
-        { InEditor = false; }
 
         VehicleObjectSync = (VRC.SDK3.Components.VRCObjectSync)GetComponent(typeof(VRC.SDK3.Components.VRCObjectSync));
     }
@@ -60,7 +58,7 @@ public class HitDetector : UdonSharpBehaviour
     {
         if (EngineControl.IsOwner)
         {
-            if (InEditor || EngineControl.UsingManualSync)
+            if (EngineControl.UsingManualSync)
             {
                 EngineControl.VehicleTransform.SetPositionAndRotation(EngineControl.Spawnposition, EngineControl.Spawnrotation);
                 EngineControl.VehicleRigidbody.velocity = Vector3.zero;
@@ -74,11 +72,7 @@ public class HitDetector : UdonSharpBehaviour
     }
     public void NotDead()//called by 'respawn' animation twice because calling on the last frame of animation is unreliable for some reason
     {
-        if (InEditor)
-        {
-            EngineControl.Health = EngineControl.FullHealth;
-        }
-        else if (EngineControl.IsOwner)
+        if (EngineControl.IsOwner)
         {
             EngineControl.Health = EngineControl.FullHealth;
         }

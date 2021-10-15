@@ -230,7 +230,6 @@ public class EngineController : UdonSharpBehaviour
     [System.NonSerializedAttribute] public bool Taxiing = false;
     [System.NonSerializedAttribute] [UdonSynced(UdonSyncMode.Linear)] public Vector3 RotationInputs;
     [System.NonSerializedAttribute] public bool Piloting = false;
-    [System.NonSerializedAttribute] public bool InEditor = true;
     [System.NonSerializedAttribute] public bool InVR = false;
     [System.NonSerializedAttribute] public bool Passenger = false;
     [System.NonSerializedAttribute] public Vector3 LastFrameVel = Vector3.zero;
@@ -460,26 +459,17 @@ public class EngineController : UdonSharpBehaviour
         VehicleRigidbody = VehicleMainObj.GetComponent<Rigidbody>();
         VehicleConstantForce = VehicleMainObj.GetComponent<ConstantForce>();
         localPlayer = Networking.LocalPlayer;
-        if (localPlayer == null)
+        if (localPlayer.IsUserInVR()) { InVR = true; }
+        if (localPlayer.isMaster)
         {
-            InEditor = true;
-            Piloting = true;
+            VehicleRigidbody.WakeUp();
+            VehicleRigidbody.constraints = RigidbodyConstraints.None;
+            IsOwner = true;
         }
         else
         {
-            InEditor = false;
-            if (localPlayer.IsUserInVR()) { InVR = true; }
-            if (localPlayer.isMaster)
-            {
-                VehicleRigidbody.WakeUp();
-                VehicleRigidbody.constraints = RigidbodyConstraints.None;
-                IsOwner = true;
-            }
-            else
-            {
-                VehicleRigidbody.Sleep();
-                VehicleRigidbody.constraints = RigidbodyConstraints.FreezePosition;
-            }
+            VehicleRigidbody.Sleep();
+            VehicleRigidbody.constraints = RigidbodyConstraints.FreezePosition;
         }
 
         if (!HasLimits) { FlightLimitsEnabled = false; }
@@ -546,8 +536,7 @@ public class EngineController : UdonSharpBehaviour
         if (VehicleObjectSync == null)
         {
             UsingManualSync = true;
-            if (!InEditor)
-            { SaccSync.gameObject.SetActive(true); }
+            SaccSync.gameObject.SetActive(true);
         }
         if (GunRecoilEmpty != null)
         {
@@ -558,8 +547,7 @@ public class EngineController : UdonSharpBehaviour
     private void LateUpdate()
     {
         float DeltaTime = Time.deltaTime;
-        if (!InEditor) { IsOwner = localPlayer.IsOwner(VehicleMainObj); }
-        else { IsOwner = true; }
+        IsOwner = localPlayer.IsOwner(VehicleMainObj);
         if (!EffectsControl.GearUp && Physics.Raycast(GroundDetector.position, -GroundDetector.up, .44f, 2049 /* Default and Environment */, QueryTriggerInteraction.Ignore))
         { Taxiing = true; }
         else { Taxiing = false; }
@@ -644,17 +632,16 @@ public class EngineController : UdonSharpBehaviour
                 float RGrip = 0;
                 float LTrigger = 0;
                 float RTrigger = 0;
-                if (!InEditor)
-                {
-                    LStick.x = Input.GetAxisRaw("Oculus_CrossPlatform_PrimaryThumbstickHorizontal");
-                    LStick.y = Input.GetAxisRaw("Oculus_CrossPlatform_PrimaryThumbstickVertical");
-                    RStick.x = Input.GetAxisRaw("Oculus_CrossPlatform_SecondaryThumbstickHorizontal");
-                    RStick.y = Input.GetAxisRaw("Oculus_CrossPlatform_SecondaryThumbstickVertical");
-                    LGrip = Input.GetAxisRaw("Oculus_CrossPlatform_PrimaryHandTrigger");
-                    RGrip = Input.GetAxisRaw("Oculus_CrossPlatform_SecondaryHandTrigger");
-                    LTrigger = Input.GetAxisRaw("Oculus_CrossPlatform_PrimaryIndexTrigger");
-                    RTrigger = Input.GetAxisRaw("Oculus_CrossPlatform_SecondaryIndexTrigger");
-                }
+
+                LStick.x = Input.GetAxisRaw("Oculus_CrossPlatform_PrimaryThumbstickHorizontal");
+                LStick.y = Input.GetAxisRaw("Oculus_CrossPlatform_PrimaryThumbstickVertical");
+                RStick.x = Input.GetAxisRaw("Oculus_CrossPlatform_SecondaryThumbstickHorizontal");
+                RStick.y = Input.GetAxisRaw("Oculus_CrossPlatform_SecondaryThumbstickVertical");
+                LGrip = Input.GetAxisRaw("Oculus_CrossPlatform_PrimaryHandTrigger");
+                RGrip = Input.GetAxisRaw("Oculus_CrossPlatform_SecondaryHandTrigger");
+                LTrigger = Input.GetAxisRaw("Oculus_CrossPlatform_PrimaryIndexTrigger");
+                RTrigger = Input.GetAxisRaw("Oculus_CrossPlatform_SecondaryIndexTrigger");
+
                 //MouseX = Input.GetAxisRaw("Mouse X");
                 //MouseY = Input.GetAxisRaw("Mouse Y");
                 Vector3 JoystickPosYaw;
@@ -1285,13 +1272,9 @@ public class EngineController : UdonSharpBehaviour
                             {
                                 newangle = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).rotation * Quaternion.Euler(0, 60, 0);
                             }
-                            else if (!InEditor)//desktop mode
+                            else
                             {
                                 newangle = localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).rotation;
-                            }
-                            else//editor
-                            {
-                                newangle = VehicleTransform.rotation;
                             }
                             float ZoomLevel = AtGCam.fieldOfView / 90;
                             AGMCamRotSlerper = Quaternion.Slerp(AGMCamRotSlerper, newangle, ZoomLevel * 220f * DeltaTime);
@@ -2358,7 +2341,7 @@ public class EngineController : UdonSharpBehaviour
             KillsBoard.UpdateScores();
         }
         //pilot and passengers are dropped out of the plane
-        if ((Piloting || Passenger) && !InEditor)
+        if ((Piloting || Passenger))
         {
             foreach (LeaveVehicleButton seat in LeaveButtons)
             {
@@ -2377,17 +2360,9 @@ public class EngineController : UdonSharpBehaviour
             }
             if (KillsBoard.MyKills > KillsBoard.TopKills)
             {
-                if (InEditor)
-                {
-                    KillsBoard.TopKiller = "Player";
-                    KillsBoard.TopKills = KillsBoard.MyKills;
-                }
-                else
-                {
-                    Networking.SetOwner(localPlayer, KillsBoard.gameObject);
-                    KillsBoard.TopKiller = localPlayer.displayName;
-                    KillsBoard.TopKills = KillsBoard.MyKills;
-                }
+                Networking.SetOwner(localPlayer, KillsBoard.gameObject);
+                KillsBoard.TopKiller = localPlayer.displayName;
+                KillsBoard.TopKills = KillsBoard.MyKills;
             }
         }
     }
@@ -2740,7 +2715,7 @@ public class EngineController : UdonSharpBehaviour
         GunAmmoInSeconds = FullGunAmmo;
         VTOLAngle = VTOLDefaultValue;
         VTOLAngleInput = VTOLDefaultValue;
-        if (InEditor || UsingManualSync)
+        if (UsingManualSync)
         {
             VehicleTransform.SetPositionAndRotation(Spawnposition, Spawnrotation);
             VehicleRigidbody.velocity = Vector3.zero;
@@ -2775,7 +2750,7 @@ public class EngineController : UdonSharpBehaviour
     }
     public void PlaneHit()
     {
-        if (InEditor || IsOwner)
+        if (IsOwner)
         {
             Health -= 10;
         }
@@ -2799,14 +2774,7 @@ public class EngineController : UdonSharpBehaviour
         EffectsControl.DoEffects = 6f; //wake up if was asleep
         EffectsControl.PlaneAnimator.SetTrigger(INSTANTGEARDOWN_STRING);
         MissilesIncoming = 0;
-        if (InEditor)
-        {
-            VehicleTransform.SetPositionAndRotation(Spawnposition, Spawnrotation);
-            Health = FullHealth;
-            EffectsControl.GearUp = false;
-            EffectsControl.Flaps = true;
-        }
-        else if (IsOwner)
+        if (IsOwner)
         {
             Health = FullHealth;
             //this should respawn it in VRC, doesn't work in editor

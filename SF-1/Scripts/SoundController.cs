@@ -91,7 +91,6 @@ public class SoundController : UdonSharpBehaviour
     [System.NonSerializedAttribute] public bool playsonicboom;
     private float MaxAudibleDistance;
     private bool TooFarToHear = false;
-    private bool InEditor = true;
     private Transform CenterOfMass;
     private void Start()
     {
@@ -148,8 +147,6 @@ public class SoundController : UdonSharpBehaviour
         ExplosionNull = (Explosion.Length < 1) ? true : false;
         BulletHitNull = (BulletHit.Length < 1) ? true : false;
 
-        if (Networking.LocalPlayer != null)
-        { InEditor = false; }
         CenterOfMass = EngineControl.CenterOfMass;
 
         if (!PlaneInsideNull)
@@ -244,24 +241,16 @@ public class SoundController : UdonSharpBehaviour
         if (dopplecounter > 4)
         {
             float SmoothDeltaTime = Time.smoothDeltaTime;
-            //find distance to player or testcamera
-            if (!InEditor)
-            {
-                if (EngineControl.localPlayer == null) return;
+            if (EngineControl.localPlayer == null) return;
 
-                ThisFrameDist = Vector3.Distance(EngineControl.localPlayer.GetPosition(), CenterOfMass.position);
-                if (ThisFrameDist > MaxAudibleDistance)
-                {
-                    LastFrameDist = ThisFrameDist; TooFarToHear = true;
-                }
-                else
-                {
-                    TooFarToHear = false;
-                }
-            }
-            else if ((testcamera != null))//editor and testcamera is set
+            ThisFrameDist = Vector3.Distance(EngineControl.localPlayer.GetPosition(), CenterOfMass.position);
+            if (ThisFrameDist > MaxAudibleDistance)
             {
-                ThisFrameDist = Vector3.Distance(testcamera.transform.position, CenterOfMass.position);
+                LastFrameDist = ThisFrameDist; TooFarToHear = true;
+            }
+            else
+            {
+                TooFarToHear = false;
             }
 
             relativespeed = (ThisFrameDist - LastFrameDist);
@@ -381,7 +370,7 @@ public class SoundController : UdonSharpBehaviour
                 }
                 PlaneThrustVolume = Mathf.Lerp(PlaneThrustVolume, (EngineControl.EngineOutput * PlaneThrustInitialVolume) * InVehicleThrustVolumeFactor, 1.08f * DeltaTime);
             }
-            else/*  if (InEditor) */ //enable here and disable 'Piloting' above for testing //you're a passenger and no one is flying
+            else
             {
 
                 if (!PlaneInsideNull)

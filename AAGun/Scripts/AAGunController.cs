@@ -47,7 +47,6 @@ public class AAGunController : UdonSharpBehaviour
     [System.NonSerializedAttribute] public float RotationSpeedX = 0f;
     [System.NonSerializedAttribute] public float RotationSpeedY = 0f;
     private Vector3 StartRot;
-    [System.NonSerializedAttribute] public bool InEditor = true;
     [System.NonSerializedAttribute] public bool IsOwner = false;
     [System.NonSerializedAttribute] [UdonSynced(UdonSyncMode.None)] public int AAMTarget = 0;
     [System.NonSerializedAttribute] public GameObject[] AAMTargets = new GameObject[80];
@@ -81,14 +80,9 @@ public class AAGunController : UdonSharpBehaviour
     void Start()
     {
         localPlayer = Networking.LocalPlayer;
-        if (localPlayer == null) { InEditor = true; Manning = true; IsOwner = true; }
-        else
+        if (localPlayer.IsUserInVR())
         {
-            InEditor = false;
-            if (localPlayer.IsUserInVR())
-            {
-                InVR = true;
-            }
+            InVR = true;
         }
 
         Assert(Rotator != null, "Start: Rotator != null");
@@ -99,8 +93,6 @@ public class AAGunController : UdonSharpBehaviour
         Assert(AAMLockedOn != null, "Start: AAMLockedOn != null");
         Assert(JoyStick != null, "Start: JoyStick != null");
 
-
-        if (InEditor) { DoAAMTargeting = true; }
 
         if (JoyStick != null) { JoyStickNull = false; }
 
@@ -160,7 +152,7 @@ public class AAGunController : UdonSharpBehaviour
         if (NumAAMTargets > 0)
         {
             n = 0;
-            //create a unique number based on position in the hierarchy in order to sort the AAMTargets array later, to make sure they're the in the same order on all clients 
+            //create a unique number based on position in the hierarchy in order to sort the AAMTargets array later, to make sure they're the in the same order on all clients
             float[] order = new float[NumAAMTargets];
             for (int i = 0; AAMTargets[n] != null; i++)
             {
@@ -184,20 +176,13 @@ public class AAGunController : UdonSharpBehaviour
     void Update()
     {
         float DeltaTime = Time.deltaTime;
-        if (!InEditor) { IsOwner = localPlayer.IsOwner(VehicleMainObj); }
+        IsOwner = localPlayer.IsOwner(VehicleMainObj);
         else { IsOwner = true; }
         if (IsOwner)
         {
             if (Health <= 0)
             {
-                if (InEditor)
-                {
-                    Explode();
-                }
-                else
-                {
-                    SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "Explode");
-                }
+                SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "Explode");
             }
             if (Manning)
             {
@@ -210,12 +195,9 @@ public class AAGunController : UdonSharpBehaviour
                 float RGrip = 0;
                 float RTrigger = 0;
                 float LTrigger = 0;
-                if (!InEditor)
-                {
-                    RTrigger = Input.GetAxisRaw("Oculus_CrossPlatform_SecondaryIndexTrigger");
-                    LTrigger = Input.GetAxisRaw("Oculus_CrossPlatform_PrimaryIndexTrigger");
-                    RGrip = Input.GetAxisRaw("Oculus_CrossPlatform_SecondaryHandTrigger");
-                }
+                RTrigger = Input.GetAxisRaw("Oculus_CrossPlatform_SecondaryIndexTrigger");
+                LTrigger = Input.GetAxisRaw("Oculus_CrossPlatform_PrimaryIndexTrigger");
+                RGrip = Input.GetAxisRaw("Oculus_CrossPlatform_SecondaryHandTrigger");
                 Vector3 JoystickPosYaw;
                 Vector3 JoystickPos;
 
@@ -303,10 +285,7 @@ public class AAGunController : UdonSharpBehaviour
                             if (AAMLocked && Time.time - AAMLastFiredTime > AAMLaunchDelay)
                             {
                                 AAMLastFiredTime = Time.time;
-                                if (InEditor)
-                                { LaunchAAM(); }
-                                else
-                                { SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "LaunchAAM"); }
+                                SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "LaunchAAM");
                                 if (NumAAM == 0) { AAMLockTimer = 0; AAMLocked = false; }
                             }
                         }
@@ -322,10 +301,7 @@ public class AAGunController : UdonSharpBehaviour
                 { AAMReloadTimer += DeltaTime; }
                 if (AAMReloadTimer > MissileReloadTime)
                 {
-                    if (InEditor)
-                    { ReloadAAM(); }
-                    else
-                    { SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "ReloadAAM"); }
+                    SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "ReloadAAM");
                 }
                 //HP Repair
                 if (Health == FullHealth)
@@ -334,10 +310,7 @@ public class AAGunController : UdonSharpBehaviour
                 { HPRepairTimer += DeltaTime; }
                 if (HPRepairTimer > HPRepairDelay)
                 {
-                    if (InEditor)
-                    { HPRepair(); }
-                    else
-                    { SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "HPRepair"); }
+                    SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "HPRepair");
                 }
             }
         }
@@ -375,7 +348,7 @@ public class AAGunController : UdonSharpBehaviour
     }
     public void Explode()//all the things players see happen when the vehicle explodes
     {
-        if (Manning && !InEditor)
+        if (Manning)
         {
             if (AAGunSeat != null) { AAGunSeat.ExitStation(localPlayer); }
         }
@@ -505,10 +478,7 @@ public class AAGunController : UdonSharpBehaviour
                         if (AAMTargetedTimer > 1)
                         {
                             AAMTargetedTimer = 0;
-                            if (InEditor)
-                            { Targeted(); }
-                            else
-                            { SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "Targeted"); }
+                            SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "Targeted");
                         }
                     }
                 }

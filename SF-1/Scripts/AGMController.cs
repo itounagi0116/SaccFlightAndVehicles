@@ -71,18 +71,11 @@ public class AGMController : UdonSharpBehaviour
         }
         AGMCollider.enabled = false;
         Animator AGMani = gameObject.GetComponent<Animator>();
-        if (EngineControl.InEditor)
+        if (EngineControl.localPlayer.IsOwner(EngineControl.gameObject))
         {
             AGMani.SetTrigger("explodeowner");
         }
-        else
-        {
-            if (EngineControl.localPlayer.IsOwner(EngineControl.gameObject))
-            {
-                AGMani.SetTrigger("explodeowner");
-            }
-            else AGMani.SetTrigger("explode");
-        }
+        else AGMani.SetTrigger("explode");
         Lifetime = MaxLifetime - 10;
     }
 }
