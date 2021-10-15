@@ -24,7 +24,6 @@ public class RacingTrigger : UdonSharpBehaviour
     private Animator CurrentCheckPointAnimator;
     private Animator NextCheckPointAnimator;
     private VRCPlayerApi localPlayer;
-    private bool InEditor = false;
     private float LastTime;
     private bool FinishedRace = true;
     private bool DoSubFrameTimeCheck;
@@ -49,7 +48,6 @@ public class RacingTrigger : UdonSharpBehaviour
         ThisCapsuleCollider = gameObject.GetComponent<CapsuleCollider>();
         ThisObjLayer = 1 << gameObject.layer;
         localPlayer = Networking.LocalPlayer;
-        if (localPlayer == null) { InEditor = true; }
     }
     private void Update()
     {
@@ -65,14 +63,7 @@ public class RacingTrigger : UdonSharpBehaviour
             if (FinishedRace && TwoSecAfterRace)//send the record update event 2 seconds after finishing the race so that the record synced string has time to sync before updating
             {
                 FinishedRace = false;
-                if (InEditor)
-                {
-                    CurrentCourse.UpdateTimes();
-                }
-                else
-                {
-                    CurrentCourse.SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "UpdateTimes");
-                }
+                CurrentCourse.SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "UpdateTimes");
                 TimeText_Cockpit.text = LastTime.ToString();
             }
             else if (!TwoSecAfterRace)
@@ -160,7 +151,7 @@ public class RacingTrigger : UdonSharpBehaviour
 
                 if (!CheckRecordDisallowedRace() && RaceTime < CurrentCourse.BestTime)
                 {
-                    if (!InEditor && !localPlayer.IsOwner(CurrentCourse.gameObject))
+                    if (!localPlayer.IsOwner(CurrentCourse.gameObject))
                     {
                         Networking.SetOwner(localPlayer, CurrentCourse.gameObject);
                     }
@@ -222,7 +213,7 @@ public class RacingTrigger : UdonSharpBehaviour
                 DoSubFrameTimeCheck = true;
                 CurrentCourse = Button.Races[CurrentCourseSelection].GetComponent<RaceCourseAndScoreboard>();
                 FinalCheckpoint = CurrentCourse.RaceCheckpoints.Length - 1;
-                if (InEditor || gameObject.activeInHierarchy) { StartCheckPointAnims(); }//don't turn on lights when switching course unless in editor for testing, or pressing while in a plane
+                if (gameObject.activeInHierarchy) { StartCheckPointAnims(); }//don't turn on lights when switching course unless in editor for testing, or pressing while in a plane
             }
             else
             {
@@ -257,14 +248,7 @@ public class RacingTrigger : UdonSharpBehaviour
             if (CurrentCourseSelection != -1 && FinishedRace)
             {
                 FinishedRace = false;
-                if (InEditor)
-                {
-                    CurrentCourse.UpdateTimes();
-                }
-                else
-                {
-                    CurrentCourse.SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "UpdateTimes");
-                }
+                CurrentCourse.SendCustomNetworkEvent(VRC.Udon.Common.Interfaces.NetworkEventTarget.All, "UpdateTimes");
             }
             if (CurrentCheckPointAnimator != null)
             {

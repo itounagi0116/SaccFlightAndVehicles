@@ -49,7 +49,7 @@ public class AAMController : UdonSharpBehaviour
             }
         }
 
-        if (EngineControl.InEditor || EngineControl.IsOwner)
+        if (EngineControl.IsOwner)
         {
             Owner = true;
             LockHack = false;
@@ -181,18 +181,11 @@ public class AAMController : UdonSharpBehaviour
                     } */
         AAMCollider.enabled = false;
         Animator AGMani = GetComponent<Animator>();
-        if (EngineControl.InEditor)
+        if (Owner)
         {
             AGMani.SetTrigger("explodeowner");
         }
-        else
-        {
-            if (Owner)
-            {
-                AGMani.SetTrigger("explodeowner");
-            }
-            else AGMani.SetTrigger("explode");
-        }
+        else AGMani.SetTrigger("explode");
         Lifetime = MaxLifetime - 10;//10 seconds to finish exploding
     }
 }

@@ -18,14 +18,12 @@ public class ViewScreenController : UdonSharpBehaviour
     [System.NonSerializedAttribute] public int NumAAMTargets = 0;
     [System.NonSerializedAttribute] public VRCPlayerApi localPlayer;
     [System.NonSerializedAttribute] public bool Disabled = true;
-    [System.NonSerializedAttribute] public bool InEditor = true;
     private int currenttarget = -1;
     private EngineController TargetEngine;
     private Transform TargetCoM;
     void Start()
     {
         localPlayer = Networking.LocalPlayer;
-        if (localPlayer != null) InEditor = false;
         //get array of AAM Targets
         RaycastHit[] aamtargs = Physics.SphereCastAll(gameObject.transform.position, 1000000, gameObject.transform.forward, 5, AAMTargetsLayer, QueryTriggerInteraction.Collide);
         NumAAMTargets = aamtargs.Length;
@@ -46,7 +44,7 @@ public class ViewScreenController : UdonSharpBehaviour
             else NumAAMTargets -= 1;
         }
         n = 0;
-        //create a unique number based on position in the hierarchy in order to sort the AAMTargets array later, to make sure it's the same among clients 
+        //create a unique number based on position in the hierarchy in order to sort the AAMTargets array later, to make sure it's the same among clients
         float[] order = new float[NumAAMTargets];
         for (int i = 0; AAMTargets[n] != null; i++)
         {
@@ -81,14 +79,11 @@ public class ViewScreenController : UdonSharpBehaviour
             }
             currenttarget = AAMTarget;
             //disable if far away
-            if (!InEditor)
+            if (Vector3.Distance(localPlayer.GetPosition(), gameObject.transform.position) > DisableDistance)
             {
-                if (Vector3.Distance(localPlayer.GetPosition(), gameObject.transform.position) > DisableDistance)
-                {
-                    ViewScreen.SetActive(false);
-                    PlaneCamera.gameObject.SetActive(false);
-                    Disabled = true;
-                }
+                ViewScreen.SetActive(false);
+                PlaneCamera.gameObject.SetActive(false);
+                Disabled = true;
             }
             if (TargetEngine.EffectsControl.LargeEffectsOnly)
             { TargetEngine.EffectsControl.Effects(); }//this is skipped in effectscontroller as an optimization if plane is distant, but the camera can see it close up, so do it here.
