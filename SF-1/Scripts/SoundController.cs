@@ -247,6 +247,8 @@ public class SoundController : UdonSharpBehaviour
             //find distance to player or testcamera
             if (!InEditor)
             {
+                if (EngineControl.localPlayer == null) return;
+
                 ThisFrameDist = Vector3.Distance(EngineControl.localPlayer.GetPosition(), CenterOfMass.position);
                 if (ThisFrameDist > MaxAudibleDistance)
                 {

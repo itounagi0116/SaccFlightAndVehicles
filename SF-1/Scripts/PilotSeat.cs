@@ -65,6 +65,7 @@ public class PilotSeat : UdonSharpBehaviour
     }
     public override void OnPlayerLeft(VRCPlayerApi player)
     {
+        if (player == null) return;
         if (player.playerId == LeaveButtonControl.SeatedPlayer)
         {
             PlayerExitPlane(player);
