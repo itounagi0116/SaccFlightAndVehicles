@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
   m_Name: ScreenButton
   m_EditorClassIdentifier: 
-  serializedUdonProgramAsset: {fileID: 11400000, guid: 9e75bb5cd2b83a4408a1394a9c4cf2dc,
+  serializedUdonProgramAsset: {fileID: 11400000, guid: 55263f045747b7e45b4161c091709a1f,
     type: 2}
   udonAssembly: 
   assemblyError: 
   sourceCsScript: {fileID: 11500000, guid: d4238824a3d634143a57c8fd3a38a535, type: 3}
-  behaviourSyncMode: 3
+  behaviourSyncMode: 2
   behaviourIDHeapVarName: __refl_const_intnl_udonTypeID
   compileErrors: []
   hasInteractEvent: 1

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
   m_Name: HUDController
   m_EditorClassIdentifier: 
-  serializedUdonProgramAsset: {fileID: 11400000, guid: 1c704b2bfe1515e43bbf1d1f92e89454,
+  serializedUdonProgramAsset: {fileID: 11400000, guid: eb3fa502a2c15b54d98083ddd7601a91,
     type: 2}
   udonAssembly: 
   assemblyError: 

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
   m_Name: VehicleRespawnButton
   m_EditorClassIdentifier: 
-  serializedUdonProgramAsset: {fileID: 11400000, guid: d154ffad281313143b702f84ba12611e,
+  serializedUdonProgramAsset: {fileID: 11400000, guid: 274808ca167909c4cb5afae60ef04f34,
     type: 2}
   udonAssembly: 
   assemblyError: 

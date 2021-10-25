@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
   m_Name: LeaveVehicleButton
   m_EditorClassIdentifier: 
-  serializedUdonProgramAsset: {fileID: 11400000, guid: 89e1e588c7fc3cc4e9039f05d8832460,
+  serializedUdonProgramAsset: {fileID: 11400000, guid: 433ff663d38ced44c8342fb947d402c1,
     type: 2}
   udonAssembly: 
   assemblyError: 
   sourceCsScript: {fileID: 11500000, guid: 5bc17901e42de4c46a9801eb1b3f7c41, type: 3}
-  behaviourSyncMode: 3
+  behaviourSyncMode: 2
   behaviourIDHeapVarName: __refl_const_intnl_udonTypeID
   compileErrors: []
   hasInteractEvent: 1

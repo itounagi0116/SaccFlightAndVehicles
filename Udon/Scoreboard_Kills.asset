@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
   m_Name: Scoreboard_Kills
   m_EditorClassIdentifier: 
-  serializedUdonProgramAsset: {fileID: 11400000, guid: fb426ecbcef5d26488ca17b372732eae,
+  serializedUdonProgramAsset: {fileID: 11400000, guid: dd26264f2cc678e4fa37552ead1833ac,
     type: 2}
   udonAssembly: 
   assemblyError: 

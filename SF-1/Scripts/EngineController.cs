@@ -2198,7 +2198,7 @@ public class EngineController : UdonSharpBehaviour
         }
         PlaneAnimator.SetFloat(BOMBS_STRING, (float)NumBomb * FullBombsDivider);
     }
-    void SortTargets(GameObject[] Targets, float[] order)
+    void SortTargets(GameObject[] Targets, int[] order)
     {
         for (int i = 1; i < order.Length; i++)
         {
@@ -3053,13 +3053,13 @@ public class EngineController : UdonSharpBehaviour
         {
             n = 0;
             //create a unique number based on position in the hierarchy in order to sort the AAMTargets array later, to make sure they're the in the same order on all clients
-            float[] order = new float[NumAAMTargets];
+            int[] order = new int[NumAAMTargets];
             for (int i = 0; AAMTargets[n] != null; i++)
             {
                 Transform parent = AAMTargets[n].transform;
                 for (int x = 0; parent != null; x++)
                 {
-                    order[n] = float.Parse(order[n].ToString() + parent.transform.GetSiblingIndex().ToString());
+                    order[n] = int.Parse(order[n].ToString() + parent.transform.GetSiblingIndex().ToString());
                     parent = parent.transform.parent;
                 }
                 n++;

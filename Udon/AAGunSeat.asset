@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
   m_Name: AAGunSeat
   m_EditorClassIdentifier: 
-  serializedUdonProgramAsset: {fileID: 11400000, guid: 7c91e9192e203b14b982337a4b3f19c6,
+  serializedUdonProgramAsset: {fileID: 11400000, guid: e82782b7fb3e3f04b95e94d085d8ce51,
     type: 2}
   udonAssembly: 
   assemblyError: 

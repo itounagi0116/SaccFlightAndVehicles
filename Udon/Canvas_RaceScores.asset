@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
   m_Name: Canvas_RaceScores
   m_EditorClassIdentifier: 
-  serializedUdonProgramAsset: {fileID: 11400000, guid: 53e95aeb98814f146b6905bc6e5fd9f0,
+  serializedUdonProgramAsset: {fileID: 11400000, guid: 37a1533b7efda9f4f9e86136e8a9f8d3,
     type: 2}
   udonAssembly: 
   assemblyError: 
