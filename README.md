@@ -32,3 +32,4 @@ VRChat向けのアバター用フライトスクリプトと作成した乗り�
 [https://github.com/Heriyadi235/YuxiFlightInstrumentsforSF](https://github.com/Heriyadi235/YuxiFlightInstrumentsforSF)
 
 ---
+[補足](2024-11_補足.md)
